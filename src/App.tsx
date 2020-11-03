@@ -6,11 +6,11 @@ interface IProps {}
 interface Selection {
     selections: string[];
     pos: number;
+    boardPos: number;
 }
 
 interface IState {
     board: any[];
-    currPos: number;
     stack: Selection[];
 }
 
@@ -37,7 +37,7 @@ class App extends React.Component<IProps, IState> {
         return newPos;
     }
 
-    randomNewBoard() {
+    randomNewBoard(): IState {
         const board = [
             // block 0
             ["5", "3", ".", ".", "7", ".", ".", ".", "."],
@@ -53,19 +53,19 @@ class App extends React.Component<IProps, IState> {
             [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         ];
         // find the first current Pos
-        let currPos = 0;
-        while (currPos < 81 && board[Math.floor(currPos / 9)][currPos % 9] !== ".") {
-            currPos++;
+        let boardPos = 0;
+        while (boardPos < 81 && board[Math.floor(boardPos / 9)][boardPos % 9] !== ".") {
+            boardPos++;
         }
 
-        let selections = this.selectionList(currPos, board);
+        let selections = this.selectionList(boardPos, board);
         return {
             board,
-            currPos,
             stack: [
                 {
                     selections,
                     pos: 0,
+                    boardPos: boardPos,
                 },
             ],
         };
@@ -124,42 +124,75 @@ class App extends React.Component<IProps, IState> {
     }
 
     nextState() {
-        const { currPos, stack, board } = this.state;
+        const { stack, board } = this.state;
         const top = stack[stack.length - 1];
-        const { selections, pos } = top;
+        const { selections, pos, boardPos } = top;
         if (pos < selections.length) {
             // fill value into current cell
             const value = selections[pos];
-            const row = Math.floor(currPos / 9);
-            const col = currPos % 9;
-            const newBoard = board.map((rows, i) => {
-                const newLine = rows.map((ele: any, j: any) => {
-                    if (i === row && j === col) {
-                        return value;
-                    } else {
-                        return ele;
-                    }
-                });
-                return newLine;
-            });
+            const newBoard = this.setBoardValue(boardPos, value, board);
+
             // find the next cell
-            const newPos = this.nextEmptyCell(currPos, newBoard);
-            if (newPos < 81) {
+            const newBoardPos = this.nextEmptyCell(boardPos, newBoard);
+            if (newBoardPos < 81) {
                 const newSelection: Selection = {
-                    selections: this.selectionList(newPos, board),
+                    selections: this.selectionList(newBoardPos, newBoard),
                     pos: 0,
+                    boardPos: newBoardPos,
                 };
                 this.setState({
                     board: newBoard,
-                    currPos: newPos,
                     stack: [...stack, newSelection],
                 });
             } else {
                 console.log("newPost over 81");
             }
         } else {
-            this.setState({});
+            if (stack.length >= 1) {
+                // pop the last element out
+                const last = stack[stack.length - 1];
+                // create new board
+                const newBoard = this.setBoardValue(last.boardPos, ".", board);
+                let newStack = [...stack.slice(0, stack.length - 1)];
+
+                if (newStack.length >= 1) {
+                    const top = newStack[newStack.length - 1];
+                    top.pos = top.pos + 1;
+                }
+                this.setState({
+                    board: newBoard,
+                    stack: newStack,
+                });
+            } else {
+                console.log("old stack is empty");
+            }
         }
+
+        // schedule the next call
+    }
+
+    /**
+     * Create a new board
+     * @param currPos
+     * @param value
+     * @param board
+     */
+    setBoardValue(currPos: number, value: string, board: any[]): string[] {
+        const row = Math.floor(currPos / 9);
+        const col = currPos % 9;
+
+        const newBoard = board.map((rows, i) => {
+            const newLine = rows.map((ele: any, j: any) => {
+                if (i === row && j === col) {
+                    return value;
+                } else {
+                    return ele;
+                }
+            });
+            return newLine;
+        });
+
+        return newBoard;
     }
 
     render() {
