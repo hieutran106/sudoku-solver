@@ -28,6 +28,15 @@ class App extends React.Component<IProps, IState> {
         const state = this.randomNewBoard();
         this.setState(state);
     }
+
+    nextEmptyCell(pos: number, board: any[]) {
+        let newPos = pos + 1;
+        while (newPos < 81 && board[Math.floor(newPos / 9)][newPos % 9] !== ".") {
+            newPos++;
+        }
+        return newPos;
+    }
+
     randomNewBoard() {
         const board = [
             // block 0
@@ -115,7 +124,42 @@ class App extends React.Component<IProps, IState> {
     }
 
     nextState() {
-        console.log(this);
+        const { currPos, stack, board } = this.state;
+        const top = stack[stack.length - 1];
+        const { selections, pos } = top;
+        if (pos < selections.length) {
+            // fill value into current cell
+            const value = selections[pos];
+            const row = Math.floor(currPos / 9);
+            const col = currPos % 9;
+            const newBoard = board.map((rows, i) => {
+                const newLine = rows.map((ele: any, j: any) => {
+                    if (i === row && j === col) {
+                        return value;
+                    } else {
+                        return ele;
+                    }
+                });
+                return newLine;
+            });
+            // find the next cell
+            const newPos = this.nextEmptyCell(currPos, newBoard);
+            if (newPos < 81) {
+                const newSelection: Selection = {
+                    selections: this.selectionList(newPos, board),
+                    pos: 0,
+                };
+                this.setState({
+                    board: newBoard,
+                    currPos: newPos,
+                    stack: [...stack, newSelection],
+                });
+            } else {
+                console.log("newPost over 81");
+            }
+        } else {
+            this.setState({});
+        }
     }
 
     render() {
