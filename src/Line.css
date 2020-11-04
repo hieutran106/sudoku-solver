@@ -10,3 +10,7 @@ li {
     height: 50px;
     text-align: center;
 }
+
+.text-red {
+    color: lightcoral;
+}

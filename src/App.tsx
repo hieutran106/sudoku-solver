@@ -9,8 +9,12 @@ interface Selection {
     boardPos: number;
 }
 
+export interface Cell {
+    isOriginal: boolean;
+    value: string;
+}
 interface IState {
-    board: any[];
+    board: Cell[][];
     stack: Selection[];
 }
 
@@ -29,16 +33,16 @@ class App extends React.Component<IProps, IState> {
         this.setState(state);
     }
 
-    nextEmptyCell(pos: number, board: any[]) {
+    nextEmptyCell(pos: number, board: Cell[][]) {
         let newPos = pos + 1;
-        while (newPos < 81 && board[Math.floor(newPos / 9)][newPos % 9] !== ".") {
+        while (newPos < 81 && board[Math.floor(newPos / 9)][newPos % 9].value !== ".") {
             newPos++;
         }
         return newPos;
     }
 
     randomNewBoard(): IState {
-        const board = [
+        const premitiveBoard = [
             // block 0
             ["5", "3", ".", ".", "7", ".", ".", ".", "."],
             ["6", ".", ".", "1", "9", "5", ".", ".", "."],
@@ -52,13 +56,20 @@ class App extends React.Component<IProps, IState> {
             [".", ".", ".", "4", "1", "9", ".", ".", "5"],
             [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         ];
+
+        const board = premitiveBoard.map((line) => {
+            const newLine = line.map((ele) => ({ value: ele, isOriginal: ele !== "." }));
+            return newLine;
+        });
+
         // find the first current Pos
         let boardPos = 0;
-        while (boardPos < 81 && board[Math.floor(boardPos / 9)][boardPos % 9] !== ".") {
+        while (boardPos < 81 && board[Math.floor(boardPos / 9)][boardPos % 9].value !== ".") {
             boardPos++;
         }
 
         let selections = this.selectionList(boardPos, board);
+
         return {
             board,
             stack: [
@@ -76,7 +87,7 @@ class App extends React.Component<IProps, IState> {
      * @param currPos
      * @param board
      */
-    selectionList(currPos: number, board: any[]): string[] {
+    selectionList(currPos: number, board: Cell[][]): string[] {
         const row = Math.floor(currPos / 9);
         const col = currPos % 9;
 
@@ -85,15 +96,15 @@ class App extends React.Component<IProps, IState> {
         const existed = Array(9).fill(false);
         // check row
         for (let i = 0; i < 9; i++) {
-            if (board[i][col] !== ".") {
-                const c = board[i][col];
+            if (board[i][col].value !== ".") {
+                const c = board[i][col].value;
                 existed[parseInt(c, 10) - 1] = true;
             }
         }
         // check col
         for (let j = 0; j < 9; j++) {
-            if (board[row][j] !== ".") {
-                const c = board[row][j];
+            if (board[row][j].value !== ".") {
+                const c = board[row][j].value;
                 existed[parseInt(c, 10) - 1] = true;
             }
         }
@@ -107,8 +118,8 @@ class App extends React.Component<IProps, IState> {
 
         for (let i = lowerX; i < upperX; i++)
             for (let j = lowerY; j < upperY; j++) {
-                if (board[i][j] !== ".") {
-                    const c = board[i][j];
+                if (board[i][j].value !== ".") {
+                    const c = board[i][j].value;
                     existed[parseInt(c, 10) - 1] = true;
                 }
             }
@@ -177,14 +188,17 @@ class App extends React.Component<IProps, IState> {
      * @param value
      * @param board
      */
-    setBoardValue(currPos: number, value: string, board: any[]): string[] {
+    setBoardValue(currPos: number, value: string, board: Cell[][]): Cell[][] {
         const row = Math.floor(currPos / 9);
         const col = currPos % 9;
 
         const newBoard = board.map((rows, i) => {
-            const newLine = rows.map((ele: any, j: any) => {
+            const newLine = rows.map((ele: Cell, j: any) => {
                 if (i === row && j === col) {
-                    return value;
+                    return {
+                        value,
+                        isOriginal: ele.isOriginal,
+                    };
                 } else {
                     return ele;
                 }
