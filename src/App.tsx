@@ -13,10 +13,13 @@ export interface Cell {
     isOriginal: boolean;
     value: string;
 }
+
 interface IState {
     board: Cell[][];
     stack: Selection[];
 }
+
+const ANIMATION_DURATION = 10;
 
 class App extends React.Component<IProps, IState> {
     constructor(props: any) {
@@ -42,13 +45,28 @@ class App extends React.Component<IProps, IState> {
     }
 
     randomNewBoard(): IState {
+        // const premitiveBoard = [
+        //     // block 0
+        //     ["5", "3", ".", ".", "7", ".", ".", ".", "."],
+        //     ["6", ".", ".", "1", "9", "5", ".", ".", "."],
+        //     [".", "9", "8", ".", ".", ".", ".", "6", "."],
+        //     // block 1
+        //     ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
+        //     ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
+        //     ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
+        //     //block 2
+        //     [".", "6", ".", ".", ".", ".", "2", "8", "."],
+        //     [".", ".", ".", "4", "1", "9", ".", ".", "5"],
+        //     [".", ".", ".", ".", "8", ".", ".", "7", "9"],
+        // ];
+
         const premitiveBoard = [
             // block 0
-            ["5", "3", ".", ".", "7", ".", ".", ".", "."],
-            ["6", ".", ".", "1", "9", "5", ".", ".", "."],
-            [".", "9", "8", ".", ".", ".", ".", "6", "."],
+            ["5", "3", "4", "6", "7", "8", "9", "1", "2"],
+            ["6", "7", "2", "1", "9", "5", "3", "4", "8"],
+            ["1", "9", "8", "3", "4", "2", "5", "6", "7"],
             // block 1
-            ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
+            ["8", "5", "9", "7", "6", ".", ".", ".", "3"],
             ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
             ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
             //block 2
@@ -145,18 +163,26 @@ class App extends React.Component<IProps, IState> {
 
             // find the next cell
             const newBoardPos = this.nextEmptyCell(boardPos, newBoard);
+            this.setState({
+                board: newBoard,
+            });
             if (newBoardPos < 81) {
                 const newSelection: Selection = {
                     selections: this.selectionList(newBoardPos, newBoard),
                     pos: 0,
                     boardPos: newBoardPos,
                 };
+
                 this.setState({
-                    board: newBoard,
                     stack: [...stack, newSelection],
                 });
+
+                // schedule next call
+                setTimeout(() => {
+                    this.nextState();
+                }, ANIMATION_DURATION);
             } else {
-                console.log("newPost over 81");
+                console.log("end");
             }
         } else {
             if (stack.length >= 1) {
@@ -174,6 +200,11 @@ class App extends React.Component<IProps, IState> {
                     board: newBoard,
                     stack: newStack,
                 });
+
+                // schedule next call
+                setTimeout(() => {
+                    this.nextState();
+                }, ANIMATION_DURATION);
             } else {
                 console.log("old stack is empty");
             }
@@ -214,7 +245,9 @@ class App extends React.Component<IProps, IState> {
         return (
             <>
                 <div className="Buttons">
-                    <button onClick={this.nextState}>Next State</button>
+                    <button onClick={this.nextState} title="Test title">
+                        Next State
+                    </button>
                     <button onClick={this.randomHandle}>Randomize</button>
                 </div>
                 {board.map((line, index) => (
