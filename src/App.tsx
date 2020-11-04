@@ -59,14 +59,13 @@ class App extends React.Component<IProps, IState> {
         //     [".", ".", ".", "4", "1", "9", ".", ".", "5"],
         //     [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         // ];
-
         const premitiveBoard = [
             // block 0
-            ["5", "3", "4", "6", "7", "8", "9", "1", "2"],
-            ["6", "7", "2", "1", "9", "5", "3", "4", "8"],
-            ["1", "9", "8", "3", "4", "2", "5", "6", "7"],
+            ["5", "3", "4", "6", "7", "8", ".", ".", "."],
+            ["6", ".", ".", "1", "9", "5", ".", ".", "."],
+            [".", "9", "8", ".", ".", ".", ".", "6", "."],
             // block 1
-            ["8", "5", "9", "7", "6", ".", ".", ".", "3"],
+            ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
             ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
             ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
             //block 2
@@ -74,6 +73,21 @@ class App extends React.Component<IProps, IState> {
             [".", ".", ".", "4", "1", "9", ".", ".", "5"],
             [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         ];
+
+        // const premitiveBoard = [
+        //     // block 0
+        //     ["5", "3", "4", "6", "7", "8", "9", "1", "2"],
+        //     ["6", "7", "2", "1", "9", "5", "3", "4", "8"],
+        //     ["1", "9", "8", "3", "4", "2", "5", "6", "7"],
+        //     // block 1
+        //     ["8", "5", "9", "7", "6", ".", ".", ".", "3"],
+        //     ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
+        //     ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
+        //     //block 2
+        //     [".", "6", ".", ".", ".", ".", "2", "8", "."],
+        //     [".", ".", ".", "4", "1", "9", ".", ".", "5"],
+        //     [".", ".", ".", ".", "8", ".", ".", "7", "9"],
+        // ];
 
         const board = premitiveBoard.map((line) => {
             const newLine = line.map((ele) => ({ value: ele, isOriginal: ele !== "." }));
@@ -185,29 +199,41 @@ class App extends React.Component<IProps, IState> {
                 console.log("end");
             }
         } else {
-            if (stack.length >= 1) {
-                // pop the last element out
-                const last = stack[stack.length - 1];
-                // create new board
-                const newBoard = this.setBoardValue(last.boardPos, ".", board);
-                let newStack = [...stack.slice(0, stack.length - 1)];
-
-                if (newStack.length >= 1) {
-                    const top = newStack[newStack.length - 1];
-                    top.pos = top.pos + 1;
+            // pop consecutive stack calls until find a pos that does not exceed selection length
+            const indexes: number[] = [];
+            const filledPosition: number[] = [];
+            for (let j = stack.length - 1; j >= 0; j--) {
+                const { pos, selections, boardPos } = stack[j];
+                if (pos >= selections.length - 1) {
+                    // if (selection.pos === selection.selections.length) {
+                    indexes.push(j);
+                    filledPosition.push(boardPos);
+                } else {
+                    break;
                 }
-                this.setState({
-                    board: newBoard,
-                    stack: newStack,
-                });
-
-                // schedule next call
-                setTimeout(() => {
-                    this.nextState();
-                }, ANIMATION_DURATION);
-            } else {
-                console.log("old stack is empty");
             }
+
+            // if (indexes.length >= 2) {
+            //     console.log(`Skip animations: ${indexes.length}`);
+            // }
+            // create a new board
+            let newBoard = this.emptyBoardAtPosition(filledPosition, board);
+            const newStack = stack.filter((ele, index) => !indexes.includes(index));
+
+            if (newStack.length >= 1) {
+                const top = newStack[newStack.length - 1];
+                top.pos = top.pos + 1;
+            }
+
+            this.setState({
+                board: newBoard,
+                stack: newStack,
+            });
+
+            // schedule next call
+            setTimeout(() => {
+                this.nextState();
+            }, ANIMATION_DURATION);
         }
 
         // schedule the next call
@@ -228,6 +254,31 @@ class App extends React.Component<IProps, IState> {
                 if (i === row && j === col) {
                     return {
                         value,
+                        isOriginal: ele.isOriginal,
+                    };
+                } else {
+                    return ele;
+                }
+            });
+            return newLine;
+        });
+
+        return newBoard;
+    }
+
+    /**
+     * Create a new board
+     * @param currPos
+     * @param value
+     * @param board
+     */
+    emptyBoardAtPosition(positions: number[], board: Cell[][]): Cell[][] {
+        const newBoard = board.map((rows, i) => {
+            const newLine = rows.map((ele: Cell, j: any) => {
+                const curr = i * 9 + j;
+                if (positions.includes(curr)) {
+                    return {
+                        value: ".",
                         isOriginal: ele.isOriginal,
                     };
                 } else {
