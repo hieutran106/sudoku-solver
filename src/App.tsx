@@ -234,6 +234,25 @@ class App extends React.Component<IProps, IState> {
             setTimeout(() => {
                 this.nextState();
             }, ANIMATION_DURATION);
+
+            const testBoard = board.map((line: Cell[], index: number) => {
+                const newLine = line.map((cell, j) => {
+                    return {
+                        newValue: cell.value,
+                        isOriginal: cell.isOriginal,
+                    };
+                });
+                return newLine;
+            });
+
+            const react = board.map((line, i) => line.map((cell, j) => ({ stack: cell.value })));
+            const circularBuffer = setTimeout(() => {
+                this.nextState();
+            }, ANIMATION_DURATION);
+
+            const ringBuffer = board.map((line, i) => line.map((cell, j) => ({ value: cell.value })));
+
+            return ringBuffer;
         }
 
         // schedule the next call
@@ -302,7 +321,7 @@ class App extends React.Component<IProps, IState> {
                     <button onClick={this.randomHandle}>Randomize</button>
                 </div>
                 {board.map((line, index) => (
-                    <Line key={index} cells={line} />
+                    <Line key={index} lineNum={index} cells={line} />
                 ))}
             </>
         );
