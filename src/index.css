@@ -12,3 +12,39 @@ body {
 * {
     font-family: "Press Start 2P", cursive;
 }
+.grid {
+    font-family: "Press Start 2P", cursive;
+    display: grid;
+    grid-template-columns: 720px 200px;
+    padding: 30px;
+}
+
+.game-board {
+    margin-right: 30px;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 300px;
+}
+
+.game-buttons {
+    font-family: "Press Start 2P", cursive;
+    display: flex;
+    flex-direction: column;
+}
+.button-solve {
+    padding: 15px;
+    background-color: limegreen;
+}
+
+.info {
+    font-family: cursive;
+}
+
+.box {
+    width: 90%;
+    margin: auto;
+}

@@ -1,5 +1,6 @@
 import React from "react";
 import Line from "./Line";
+import { randomSudoku } from "./sudokus";
 
 interface IProps {}
 
@@ -17,6 +18,8 @@ export interface Cell {
 interface IState {
     board: Cell[][];
     stack: Selection[];
+    timeoutId: number;
+    status: "init" | "solving" | "solved";
 }
 
 const ANIMATION_DURATION = 10;
@@ -25,8 +28,10 @@ class App extends React.Component<IProps, IState> {
     constructor(props: any) {
         super(props);
         const initState = this.randomNewBoard();
+
         this.state = initState;
 
+        this.solveSudokuHandler = this.solveSudokuHandler.bind(this);
         this.nextState = this.nextState.bind(this);
         this.randomHandle = this.randomHandle.bind(this);
     }
@@ -45,6 +50,11 @@ class App extends React.Component<IProps, IState> {
     }
 
     randomNewBoard(): IState {
+        const timeoutId = this.state?.timeoutId;
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+
         // const premitiveBoard = [
         //     // block 0
         //     ["5", "3", ".", ".", "7", ".", ".", ".", "."],
@@ -59,20 +69,20 @@ class App extends React.Component<IProps, IState> {
         //     [".", ".", ".", "4", "1", "9", ".", ".", "5"],
         //     [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         // ];
-        const premitiveBoard = [
-            // block 0
-            ["5", "3", "4", "6", "7", "8", ".", ".", "."],
-            ["6", ".", ".", "1", "9", "5", ".", ".", "."],
-            [".", "9", "8", ".", ".", ".", ".", "6", "."],
-            // block 1
-            ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
-            ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
-            ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
-            //block 2
-            [".", "6", ".", ".", ".", ".", "2", "8", "."],
-            [".", ".", ".", "4", "1", "9", ".", ".", "5"],
-            [".", ".", ".", ".", "8", ".", ".", "7", "9"],
-        ];
+        // const premitiveBoard = [
+        //     // block 0
+        //     ["5", "3", "4", "6", "7", "8", ".", ".", "."],
+        //     ["6", ".", ".", "1", "9", "5", ".", ".", "."],
+        //     [".", "9", "8", ".", ".", ".", ".", "6", "."],
+        //     // block 1
+        //     ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
+        //     ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
+        //     ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
+        //     //block 2
+        //     [".", "6", ".", ".", ".", ".", "2", "8", "."],
+        //     [".", ".", ".", "4", "1", "9", ".", ".", "5"],
+        //     [".", ".", ".", ".", "8", ".", ".", "7", "9"],
+        // ];
 
         // const premitiveBoard = [
         //     // block 0
@@ -89,6 +99,7 @@ class App extends React.Component<IProps, IState> {
         //     [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         // ];
 
+        const premitiveBoard = randomSudoku();
         const board = premitiveBoard.map((line) => {
             const newLine = line.map((ele) => ({ value: ele, isOriginal: ele !== "." }));
             return newLine;
@@ -111,6 +122,8 @@ class App extends React.Component<IProps, IState> {
                     boardPos: boardPos,
                 },
             ],
+            timeoutId: 0,
+            status: "init",
         };
     }
 
@@ -166,6 +179,15 @@ class App extends React.Component<IProps, IState> {
         return selections;
     }
 
+    solveSudokuHandler() {
+        const timeoutId = this.state.timeoutId;
+        if (timeoutId !== 0) {
+            return;
+        }
+
+        this.nextState();
+    }
+
     nextState() {
         const { stack, board } = this.state;
         const top = stack[stack.length - 1];
@@ -187,16 +209,20 @@ class App extends React.Component<IProps, IState> {
                     boardPos: newBoardPos,
                 };
 
-                this.setState({
-                    stack: [...stack, newSelection],
-                });
-
                 // schedule next call
-                setTimeout(() => {
+                const timeoutId = window.setTimeout(() => {
                     this.nextState();
                 }, ANIMATION_DURATION);
+                this.setState({
+                    stack: [...stack, newSelection],
+                    timeoutId,
+                    status: "solving",
+                });
             } else {
                 console.log("end");
+                this.setState({
+                    status: "solved",
+                });
             }
         } else {
             // pop consecutive stack calls until find a pos that does not exceed selection length
@@ -213,10 +239,6 @@ class App extends React.Component<IProps, IState> {
                 }
             }
 
-            // if (indexes.length >= 2) {
-            //     console.log(`Skip animations: ${indexes.length}`);
-            // }
-            // create a new board
             let newBoard = this.emptyBoardAtPosition(filledPosition, board);
             const newStack = stack.filter((ele, index) => !indexes.includes(index));
 
@@ -225,34 +247,17 @@ class App extends React.Component<IProps, IState> {
                 top.pos = top.pos + 1;
             }
 
+            // schedule next call
+            const timeoutId = window.setTimeout(() => {
+                this.nextState();
+            }, ANIMATION_DURATION);
+
             this.setState({
                 board: newBoard,
                 stack: newStack,
+                timeoutId,
+                status: "solving",
             });
-
-            // schedule next call
-            setTimeout(() => {
-                this.nextState();
-            }, ANIMATION_DURATION);
-
-            const testBoard = board.map((line: Cell[], index: number) => {
-                const newLine = line.map((cell, j) => {
-                    return {
-                        newValue: cell.value,
-                        isOriginal: cell.isOriginal,
-                    };
-                });
-                return newLine;
-            });
-
-            const react = board.map((line, i) => line.map((cell, j) => ({ stack: cell.value })));
-            const circularBuffer = setTimeout(() => {
-                this.nextState();
-            }, ANIMATION_DURATION);
-
-            const ringBuffer = board.map((line, i) => line.map((cell, j) => ({ value: cell.value })));
-
-            return ringBuffer;
         }
 
         // schedule the next call
@@ -311,19 +316,44 @@ class App extends React.Component<IProps, IState> {
     }
 
     render() {
-        const { board } = this.state;
+        const { board, status } = this.state;
+        let msg;
+        if (status === "solving") {
+            msg = <p>Solving the puzzle</p>;
+        } else if (status === "solved") {
+            msg = <p>Solved!</p>;
+        }
+
         return (
-            <>
-                <div className="Buttons">
-                    <button onClick={this.nextState} title="Test title">
-                        Next State
-                    </button>
-                    <button onClick={this.randomHandle}>Randomize</button>
+            <div>
+                <div className="grid">
+                    <div className="game-board">
+                        {board.map((line, index) => (
+                            <Line key={index} lineNum={index} cells={line} />
+                        ))}
+                    </div>
+                    <div className="right-column">
+                        <h1>EzSudoku</h1>
+                        {msg}
+                        <div className="game-buttons">
+                            <button onClick={this.randomHandle} style={{ marginBottom: "20px", padding: "15px" }}>
+                                New Game
+                            </button>
+                            <button className="button-solve" onClick={this.solveSudokuHandler} title="Solve the Sudoku using back-tracking algorithm">
+                                Solve!
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                {board.map((line, index) => (
-                    <Line key={index} lineNum={index} cells={line} />
-                ))}
-            </>
+                <div className="box">
+                    <h5 className="header">SUDOKU RULES</h5>
+                    <p className="info">
+                        Sudoku is a puzzle game, where the object is to use the numbers from 1-9 to fill every row, column and box. Each number can only occur once in every row,
+                        column or box. A number of fields will have numbers in them at the start, the rest will be filled in by you. If you manage to fill all the fields without
+                        ever having a duplicate number in a unit (row, column or box), you win the game.
+                    </p>
+                </div>
+            </div>
         );
     }
 }

@@ -6,10 +6,11 @@ ul {
 
 li {
     border: 1px solid #ccc;
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     text-align: center;
-    line-height: 50px;
+    line-height: 60px;
+    font-size: larger;
 }
 
 .text-red {
@@ -17,9 +18,9 @@ li {
 }
 
 .border-right {
-    border-right: 1px solid black;
+    border-right: 2px solid rgba(0, 0, 0, 0.822);
 }
 
 .border-bottom {
-    border-bottom: 1px solid black;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.822);
 }
